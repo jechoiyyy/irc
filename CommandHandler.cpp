@@ -185,11 +185,6 @@ void CommandHandler::handleJoin(Client& client, const Message& msg)
         }
     }
 
-	if (ch->getChannelTopic().empty()) {
-		client.send_reply(RPL_NOTOPIC, client.getNickname() + " " + channel_name + " No topic is set");
-	} else {
-		client.send_reply(RPL_TOPIC, client.getNickname() + " " + channel_name + ch->getChannelTopic());
-	}
 	client.send_reply(RPL_NAMREPLY, client.getNickname() + " = " + channel_name + " :" + name_list);
 	client.send_reply(RPL_ENDOFNAMES, client.getNickname() + " " + channel_name + " :End of /NAMES list");
 }
