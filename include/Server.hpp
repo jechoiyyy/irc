@@ -43,11 +43,12 @@ class Server {
 		Channel* getChannel(const std::string& channel_name);
 		Channel* createChannel(const std::string& channel_name);
 		void	removeChannel(const std::string& channel_name);
-		void	removeClient();
+		void	quitFromAllChannels(int fd, const std::string &quit_msg);
 
 		void	enablePollout(int fd);
 		void	sendToClient(int fd, const std::string& message);
 		void	broadcastToChannel(const std::string& channel_name, const std::string& message, int except_fd);
+		void	broadcastToSharedUsers(int sender_fd, const std::string &message);
 
 		Client* getClientByFd(int fd);
 		Client* getClientByNickname(const std::string& nickname);

@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <unistd.h>
 #include <sys/types.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <fcntl.h>
@@ -134,6 +135,13 @@ void	Server::handleNewConnection()
 		close(new_fd);
 		return;
 	}
+	
+	int on = 1;
+	if (setsockopt(new_fd, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
+		std::cerr << "setsockopt: " << strerror(errno) << std::endl;
+		close(new_fd);
+		return;
+	}
 
 	pollfd client_pollfd;
 	client_pollfd.fd = new_fd;
@@ -181,6 +189,10 @@ bool	Server::handleClientEvent(size_t index)
 				fds[index].events = POLLIN;
 			}
 		}
+	}
+
+	if (!client.hasWriteData() && client.isDisconnecting()) {
+		should_close = true;
 	}
 
 	if (should_close) {
@@ -289,6 +301,26 @@ void	Server::broadcastToChannel(const std::string& channel_name, const std::stri
 	}
 }
 
+void	Server::broadcastToSharedUsers(int sender_fd, const std::string &message)
+{
+	std::set<int> target_fds;
+	std::map<std::string, Channel>::iterator it;
+
+	for (it = channels.begin(); it != channels.end(); ++it) {
+		Channel& ch = it->second;
+		if (ch.hasMember(sender_fd)) {
+			const std::set<int> &members = ch.getMembers();
+			target_fds.insert(members.begin(), members.end());
+		}
+	}
+
+	target_fds.erase(sender_fd);
+
+	for (std::set<int>::iterator set_it = target_fds.begin(); set_it != target_fds.end(); ++set_it) {
+		sendToClient(*set_it, message);
+	}
+}
+
 Client* Server::getClientByFd(int fd)
 {
 	std::map<int, Client>::iterator it = clients.find(fd);
@@ -307,27 +339,61 @@ Client* Server::getClientByNickname(const std::string& nickname)
 	return NULL;
 }
 
+// 모든 채널을 순회하며 채널을 퇴장함
+// - 다른 유저에게 QUIT 브로드캐스트
+// - 방장인 경우 방장 위임
+void	Server::quitFromAllChannels(int fd, const std::string &quit_msg)
+{
+	std::vector<std::string> empty_channels;
+	std::map<std::string, Channel>::iterator it;
+
+	for (it = channels.begin(); it != channels.end(); ++it) {
+		Channel& ch = it->second;
+		if (ch.hasMember(fd)) {
+			broadcastToChannel(ch.getChannelName(), quit_msg, fd);
+
+			bool was_operator = ch.isOperator(fd);
+			ch.removeMember(fd);
+
+			if (ch.getMembers().empty()) {
+				empty_channels.push_back(ch.getChannelName());
+			} else {
+				if (was_operator && ch.getOperators().empty()) {
+					int new_op_fd = *(ch.getMembers().begin());
+					ch.addOperator(new_op_fd);
+
+					Client *new_op_client = getClientByFd(new_op_fd);
+					if (new_op_client) {
+						std::string mode_msg = ":localhost MODE " + ch.getChannelName() + " +o " + new_op_client->getNickname() + "\r\n";
+						broadcastToChannel(ch.getChannelName(), mode_msg, -1);
+					}
+				}
+			}
+		}
+	}
+	for (size_t i = 0; i < empty_channels.size(); ++i) {
+		removeChannel(empty_channels[i]);
+	}
+}
+
 void	Server::closeClient(size_t index)
 {
 	int client_fd = fds[index].fd;
 	Client& client = clients[client_fd];
 
+	// 비정상 종료 시 기본 전송될 QUIT 메시지
+	std::string reason = client.getQuitReason().empty() ? "Client exited" : client.getQuitReason();
+	std::string quit_msg = ":" + (client.getNickname().empty() ? "*" : client.getNickname()) + "!" + client.getUsername() + "@localhost QUIT :" + reason + "\r\n";
+	quitFromAllChannels(client_fd, quit_msg);
+
 	if (!client.getNickname().empty())
 		nicknames.erase(client.getNickname());
-
-	// 채널에서 client_fd 삭제
-	std::map<std::string, Channel>::iterator it;
-	for (it = channels.begin(); it != channels.end(); ++it) {
-		Channel& ch = it->second;
-		if (ch.hasMember(client_fd))
-			ch.removeMember(client_fd);
-	}
 
 	close(client_fd);
 	clients.erase(client_fd);
 	fds.erase(fds.begin() + index);
 
-	std::cout << "Client fd " << client_fd << " closed" << std::endl;
+	std::cout << "Client fd " << client_fd << " closed (" << reason << ")" << std::endl;
 }
 
 const std::map<std::string, Channel> Server::getChannels()

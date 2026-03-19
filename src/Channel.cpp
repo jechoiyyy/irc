@@ -17,8 +17,7 @@ void	Channel::addMember(int client_fd)
 void	Channel::removeMember(int client_fd)
 {
 	channel_members_.erase(client_fd);
-	if (isOperator(client_fd))
-		removeOperator(client_fd);
+	removeOperator(client_fd);
 	invite_list.erase(client_fd);
 }
 
@@ -37,11 +36,6 @@ void	Channel::addOperator(int client_fd)
 void	Channel::removeOperator(int client_fd)
 {
 	channel_operators_.erase(client_fd);
-
-	if (channel_operators_.size() == 0) {
-		std::set<int>::iterator it = channel_members_.begin();
-		addOperator(*it);
-	}
 }
 
 bool	Channel::isOperator(int client_fd) const
@@ -113,9 +107,12 @@ const std::string	Channel::getMode() const
 		modes += "l";
 		std::ostringstream os;
 		os << user_limit;
+		// 파라미터 이미 존재한다면 공백으로 구분
+		if (!params.empty())
+			params += " ";
 		params += os.str();
 	}
-	std::string result = modes + " " + params;
+	std::string result = params.empty() ? modes : modes + " " + params;
 	return result;
 }
 
@@ -159,7 +156,10 @@ bool	Channel::canJoin(int client_fd, const std::string& provided_key) const
 	if (hasMember(client_fd))
 		return true;
 
-	if (invite_only && !is_Invited(client_fd))
+	if (is_Invited(client_fd))
+		return true;
+
+	if (invite_only)
 		return false;
 
 	if (user_limit > 0 && channel_members_.size() >= (size_t)user_limit)

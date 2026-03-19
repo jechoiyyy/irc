@@ -1,10 +1,11 @@
 #include "Client.hpp"
+#include <cstdlib>
 #include <iostream>
 #include <cerrno>
 
-Client::Client(): fd(-1), pass_registered(false) {}
+Client::Client(): fd(-1), pass_registered(false), is_disconnecting(false), quit_reason("") {}
 
-Client::Client(int fd): fd(fd), pass_registered(false) {}
+Client::Client(int fd): fd(fd), pass_registered(false), is_disconnecting(false), quit_reason("") {}
 
 
 bool	Client::handle_recv()
@@ -113,6 +114,15 @@ bool				Client::hasWriteData() const
 	return !write_buffer.empty();
 }
 
+bool				Client::isDisconnecting() const
+{
+	return is_disconnecting;
+}
+
+const std::string &Client::getQuitReason() const
+{
+	return quit_reason;
+}
 
 // setter
 void	Client::setFd(int fd)
@@ -138,6 +148,12 @@ void	Client::setRealname(const std::string& realname)
 void	Client::setPassRegistered(bool value)
 {
 	this->pass_registered = value;
+}
+
+void	Client::setDisconnecting(const std::string &reason)
+{
+	this->is_disconnecting = true;
+	quit_reason = reason;
 }
 
 void	Client::appendWriteBuffer(const std::string& msg)

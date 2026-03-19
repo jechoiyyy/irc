@@ -6,6 +6,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "Message.hpp"
+#include <vector>
 
 class Server;
 
@@ -18,6 +19,7 @@ const std::string ERR_NOTREGISTERED = "451";
 const std::string ERR_NEEDMOREPARAMS = "461";
 const std::string ERR_ALREADYREGISTRED = "462";
 const std::string ERR_PASSWDMISMATCH = "464";
+const std::string ERR_UNKNOWNCOMMAND = "421";
 
 // Join Reply codes
 const std::string RPL_NAMREPLY = "353";
@@ -49,7 +51,10 @@ const std::string RPL_INVITING = "341";
 const std::string RPL_CHANNELMODEIS = "324";
 const std::string ERR_UNKNOWNMODE = "472";
 const std::string ERR_KEYSET = "467";
-//pong
+const std::string RPL_UMODEIS = "221";
+const std::string ERR_UMODEUNKNOWNFLAG = "501";
+const std::string ERR_USERSDONTMATCH = "502";
+//ping
 const std::string ERR_NOORIGIN = "409";
 const std::string ERR_NOSUCHSERVER = "402";
 
@@ -73,9 +78,10 @@ class CommandHandler {
 		void	handleTopic(Client& client, const Message& msg);
 		void	handleInvite(Client& client, const Message& msg);
 		void	handleMode(Client& client, const Message& msg);
-		void	applyMode(Client& client, const std::vector<std::string>& params, Channel* ch);
 		void	handlePing(Client& client, const Message& msg);
 		void	handleQuit(Client& client, const Message& msg);
+		void	handleCap(Client& client, const Message& msg);
+		void	applyMode(Client& client, const std::vector<std::string>& params, Channel* ch, const std::string &receiver);
 
 		void	sendWelcome(Client& client);
 
