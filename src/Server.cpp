@@ -401,7 +401,6 @@ const std::map<std::string, Channel> Server::getChannels()
 	return channels;
 }
 
-
 const std::vector<pollfd> Server::getfds()
 {
 	return fds;

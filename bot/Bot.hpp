@@ -2,6 +2,8 @@
 #define BOT_HPP
 
 #include <string>
+#include <map>
+#include <set>
 
 class Bot {
 private:
@@ -14,20 +16,29 @@ private:
 	std::string	_read_buf;
 	std::string	_write_buf;
 
+	std::map<std::string, std::set<std::string> >	_channel_users;
+
 	void	connectServer();
-	void	authenticate();
-	void	receiveData();
-	void	sendData();
+	void		authenticate();
+	void		receiveData();
+	void		sendData();
 
-	void	extractLine();
-	void	processMessage(const std::string &raw_msg);
+	void		extractLine();
+	std::string	extractSenderName(const std::string &msg);
+	void		processMessage(const std::string &raw_msg);
 
-	void	sendPrivmsg(const std::string &target, const std::string &msg);
+	void		sendPrivmsg(const std::string &target, const std::string &msg);
 
-	void	joinChannel(const std::string &channel);
+	void		joinChannel(const std::string &channel);
 
-	void	handlePrivmsg(const std::string &msg);
-	void	handleInvite(const std::string &msg);
+	void		handlePrivmsg(const std::string &msg);
+	void		handleInvite(const std::string &msg);
+	void		handleJoin(const std::string &msg);
+	void		handlePart(const std::string &msg);
+	void		handleQuit(const std::string &msg);
+	void		handleKick(const std::string &msg);
+	void		handleNamesReply(const std::string &msg);
+
 
 public:
 	Bot(const std::string& ip, int port, const std::string& pass, const std::string& nick);

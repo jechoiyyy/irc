@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	std::cout << "[Bot] 봇 종료";
+	std::cout << "[Main] 정상 종료";
 
 	return 0;
 }

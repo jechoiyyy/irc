@@ -35,7 +35,7 @@ Bot::~Bot() {
 
 		close(_sock);
 		_sock = -1;
-		std::cout << "[Bot] 봇 종료.";
+		std::cout << "[Bot] 봇 종료." << std::endl;
 	}
 }
 
@@ -130,6 +130,17 @@ void Bot::extractLine() {
 	}
 }
 
+std::string	Bot::extractSenderName(const std::string &msg) {
+	if (msg.empty() || msg[0] != ':')
+		return "";
+
+	size_t excl_pos = msg.find('!');
+	if (excl_pos == std::string::npos)
+		return "";
+
+	return msg.substr(1, excl_pos - 1);
+}
+
 void Bot::processMessage(const std::string &raw_msg) {
 	std::cout << "[Bot Recv] " << raw_msg << std::endl;
 
@@ -137,6 +148,14 @@ void Bot::processMessage(const std::string &raw_msg) {
 		handlePrivmsg(raw_msg);
 	} else if (raw_msg.find(" INVITE ") != std::string::npos) {
 		handleInvite(raw_msg);
+	} else if (raw_msg.find(" JOIN ") != std::string::npos) {
+		handleJoin(raw_msg);
+	} else if (raw_msg.find(" PART ") != std::string::npos) {
+		handlePart(raw_msg);
+	} else if (raw_msg.find(" QUIT ") != std::string::npos) {
+		handleQuit(raw_msg);
+	} else if (raw_msg.find(" KICK ") != std::string::npos) {
+		handleKick(raw_msg);
 	}
 }
 
@@ -215,6 +234,111 @@ void Bot::handleInvite(const std::string &msg) {
 		}
 
 		joinChannel(channel);
+	}
+}
+
+void Bot::handleJoin(const std::string &msg) {
+	std::string sender = extractSenderName(msg);
+	size_t pos = msg.find(" JOIN ");
+	if (pos == std::string::npos)
+		return ;
+
+	size_t start = pos + 6;
+	if (msg[start] == ':')
+		start++;
+
+	size_t end = msg.find('\r', start);
+	std::string channel = msg.substr(start, end - start);
+
+	_channel_users[channel].insert(sender);
+}
+
+void Bot::handlePart(const std::string &msg) {
+	std::string sender = extractSenderName(msg);
+	size_t pos = msg.find(" PART ");
+	if (pos == std::string::npos)
+		return ;
+
+	size_t start = pos + 6;
+	size_t space_pos = msg.find(' ', start);
+	size_t cr_pos = msg.find('\r', start);
+	size_t end = (space_pos != std::string::npos && space_pos < cr_pos) ? space_pos : cr_pos;
+
+	std::string channel = msg.substr(start, end - start);
+	if (!channel.empty() && channel[0] == ':')
+		channel = channel.substr(1);
+
+	if (sender == _nickname) {
+		_channel_users.erase(channel);
+	} else {
+		_channel_users[channel].erase(sender);
+
+		if (_channel_users[channel].size() == 1 && _channel_users[channel].count(_nickname)) {
+			std::string part_msg = "PART " + channel + " :봇 퇴장\r\n";
+			_write_buf += part_msg;
+			std::cout << "[Bot] " << channel << " 에 혼자 남아 즉시 퇴장" << std::endl;
+
+			_channel_users.erase(channel);
+		}
+	}
+}
+
+void Bot::handleQuit(const std::string &msg) {
+	std::string sender = extractSenderName(msg);
+	if (sender == _nickname)
+		return ;
+
+	for (std::map<std::string, std::set<std::string> >::iterator it = _channel_users.begin(); it != _channel_users.end(); ) {
+		std::string channel = it->first;
+
+		it->second.erase(sender);
+
+		if (it->second.size() == 1 && it->second.count(_nickname)) {
+			std::string part_msg = "PART " + channel + " :봇 퇴장\r\n";
+			_write_buf += part_msg;
+			std::cout << "[Bot] " << channel << " 에 혼자 남아 즉시 퇴장" << std::endl;
+
+			_channel_users.erase(it++);
+		} else {
+			++it;
+		}
+	}
+}
+
+void	Bot::handleKick(const std::string &msg) {
+	size_t pos = msg.find(" KICK ");
+	if (pos == std::string::npos) return;
+
+	size_t channel_start = pos + 6;
+	size_t channel_end = msg.find(' ', channel_start);
+	if (channel_end == std::string::npos) return;
+
+	std::string channel = msg.substr(channel_start, channel_end - channel_start);
+	if (!channel.empty() && channel[0] == ':') channel = channel.substr(1);
+
+	size_t target_start = channel_end + 1;
+	size_t target_end = msg.find(' ', target_start);
+	size_t cr_pos = msg.find('\r', target_start);
+
+	size_t actual_end = (target_end != std::string::npos && target_end < cr_pos) ? target_end : cr_pos;
+	std::string target = msg.substr(target_start, actual_end - target_start);
+
+	if (target == _nickname) {
+		// 1. 봇 자신이 쫓겨난 경우
+		_channel_users.erase(channel);
+		std::cout << "[Bot] " << channel << " 에서 강퇴당했습니다." << std::endl;
+	} else {
+		// 2. 다른 유저가 쫓겨난 경우
+		_channel_users[channel].erase(target);
+
+		// 지운 후 봇 혼자 남았다면 봇 퇴장
+		if (_channel_users[channel].size() == 1 && _channel_users[channel].count(_nickname)) {
+			std::string part_msg = "PART " + channel + " :마지막 유저 강퇴로 인한 퇴장\r\n";
+			_write_buf += part_msg;
+			std::cout << "[Bot] " << channel << " 에서 봇 퇴장" << std::endl;
+
+			_channel_users.erase(channel);
+		}
 	}
 }
 
