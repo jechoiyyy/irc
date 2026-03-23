@@ -859,6 +859,44 @@ void	CommandHandler::handleCap(Client& client, const Message& msg)
 	}
 }
 
+void	CommandHandler::handleWho(Client& client, const Message& msg)
+{
+	std::string receiver = client.getNickname().empty() ? "*" : client.getNickname();
+
+	if (!client.is_registered()) {
+		client.send_reply(ERR_NOTREGISTERED, receiver + " :You have not registered");
+		return ;
+	}
+
+	std::string target = "*";
+	if (!msg.getParams().empty() && !msg.getParams()[0].empty()) {
+		target = msg.getParams()[0];
+	}
+
+	if (target[0] == '#' || target[0] == '&') {
+		Channel *ch = server.getChannel(target);
+
+		if (ch) {
+			const std::set<int> &members = ch->getMembers();
+			for (std::set<int>::const_iterator it = members.begin(); it != members.end(); ++it) {
+				Client *member = server.getClientByFd(*it);
+				if (member) {
+					std::string flags = "H";
+					if (ch->isOperator(*it)) {
+						flags += "@";
+					}
+
+					std::string reply_msg = target + " " + member->getUsername() + " "
+									+ "localhost localhost " + member->getNickname()
+									+ " " + flags + " :0 " + member->getRealname();
+					client.send_reply(RPL_WHOREPLY, receiver + " " + reply_msg);
+				}
+			}
+		}
+	}
+	client.send_reply(RPL_ENDOFWHO, receiver + " " + target + " :End of WHO list");
+}
+
 void	CommandHandler::registerCommands()
 {
 	commands["PASS"] = &CommandHandler::handlePass;
@@ -874,6 +912,7 @@ void	CommandHandler::registerCommands()
 	commands["PING"] = &CommandHandler::handlePing;
 	commands["QUIT"] = &CommandHandler::handleQuit;
 	commands["CAP"] = &CommandHandler::handleCap;
+	commands["WHO"] = &CommandHandler::handleWho;
 }
 
 void CommandHandler::handleCommand(Client& client, const Message& msg)

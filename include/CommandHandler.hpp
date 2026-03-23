@@ -57,6 +57,9 @@ const std::string ERR_USERSDONTMATCH = "502";
 //ping
 const std::string ERR_NOORIGIN = "409";
 const std::string ERR_NOSUCHSERVER = "402";
+//who
+const std::string RPL_WHOREPLY = "352";
+const std::string RPL_ENDOFWHO = "315";
 
 class CommandHandler {
 	private:
@@ -81,6 +84,7 @@ class CommandHandler {
 		void	handlePing(Client& client, const Message& msg);
 		void	handleQuit(Client& client, const Message& msg);
 		void	handleCap(Client& client, const Message& msg);
+		void	handleWho(Client& client, const Message& msg);
 		void	applyMode(Client& client, const std::vector<std::string>& params, Channel* ch, const std::string &receiver);
 
 		void	sendWelcome(Client& client);
