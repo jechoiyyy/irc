@@ -29,6 +29,12 @@ make
 ./ircserv 6667 mypassword
 ```
 
+### Checking Whether the Server is listening on IPv4 or IPv6
+
+```bash
+netstat -an | grep 6667
+```
+
 ### Connecting to the Server
 
 Use `irssi` to connect to the server:
@@ -52,13 +58,89 @@ make fclean  # Remove object files and executable
 make re      # Rebuild the project
 ```
 
+### Mandatory Part commands
+
+`PASS`: Authenticates the client with the server password before registration.
+
+```text
+PASS mypassword
+```
+
+`NICK`: Sets or changes the client's nickname.
+
+```text
+NICK jechoi
+```
+
+`USER`: Completes user registration by sending username and real name information.
+USER <username> <hostname> <servername> :<realname>
+
+```text
+USER jechoi 0 * :Jechoi
+```
+
+`JOIN`: Joins an existing channel or creates it if it does not exist.
+
+```text
+JOIN #general
+```
+
+`PRIVMSG`: Sends a private message to a user or a channel.
+
+```text
+PRIVMSG #general :Hello everyone!
+```
+
+`KICK`: Removes a user from a channel. Usually available to channel operators only.
+
+```text
+KICK #general troublemaker :Spamming
+```
+
+`INVITE`: Invites a user to join an invite-only channel.
+
+```text
+INVITE alice #general
+```
+
+`TOPIC`: Sets or displays the topic of a channel.
+
+```text
+TOPIC #general :Welcome to the general room
+```
+
+`MODE`: Changes channel modes such as invite-only, topic protection, key, operator privilege, and user limit.
+
+```text
+MODE #general +i
+```
+
+#### Supported channel modes
+
+- `MODE #general +i`: Enable invite-only mode
+- `MODE #general -i`: Disable invite-only mode
+
+- `MODE #general +t`: Only channel operators can change the topic
+- `MODE #general -t`: Allow all channel members to change the topic
+
+- `MODE #general +k secret`: Set a channel password
+- `MODE #general -k secret`: Remove the channel password
+
+- `MODE #general +o alice`: Grant operator privileges to `alice`
+- `MODE #general -o alice`: Remove operator privileges from `alice`
+
+- `MODE #general +l 10`: Limit the channel to 10 users
+- `MODE #general -l`: Remove the user limit
+
 ### Bonus
+
 #### File Transfer
 
-IRC에서 file transfer는 dcc(direct client to client) 프로토콜을 통해 이루어진다.
-서버는 파일 데이터의 통로가 아니라 클라이언트 간 전송을 성립시켜주는 중개의 역할만 한다.
+In IRC, file transfer is handled through the DCC (Direct Client-to-Client) protocol.
+The server does not relay the file data itself; it only acts as a mediator to establish the transfer between clients.
 
 Send file aa to bb
+
 ```text
 /dcc send bb fileA
 ```
@@ -87,6 +169,7 @@ Inviting 'ircbot' to a channel:
 ```
 
 What a bot can do:
+
 - !help: Displays a list of commands the bot can perform.
 - !hello / !hi: The bot greets you.
 - !ping: The bot responds with “pong.”

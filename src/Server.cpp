@@ -36,8 +36,8 @@ int		Server::getListenerSocket()
 
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;	// IPv4, IPv6 둘 다 호환
-	hints.ai_socktype = SOCK_STREAM;	// TCP
-	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;	// TCP, SOCK_DGRAM으로 설정하면 UDP
+	hints.ai_flags = AI_PASSIVE;	// 소켓 Listen 모드 설정
 
 	if ((rv = getaddrinfo(NULL, port, &hints, &res)) != 0) {
 		std::cerr << "getaddrinfo: " << gai_strerror(rv) << std::endl;
@@ -102,7 +102,7 @@ bool	Server::initialize()
 		return false;
 	}
 
-	// recv()에서 \r\n 없는 메시지를 보냈을 때, 해당 메시지가 완성될 때까지 해당 클라이언트에서 서버가 멈춰서 기다리지 않게 하는 설정
+	// recv()에서 \r\n 없는 메시지를 보냈을 때, 해당 메시지가 완성될 때까지 해당 클라이언트에서 서버가 멈춰서 기다리지 않게 하는 설정 = 논블로킹
 	if (makeSocketNonblocking(listener) == -1) {
 		close(listener);
 		return false;
