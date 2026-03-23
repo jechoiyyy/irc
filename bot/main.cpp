@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	std::cout << "초대법: /invite ircbot (#channel)" << std::endl;
 	std::string ip = argv[1];
 	int port = std::atoi(argv[2]);
 	std::string password = argv[3];

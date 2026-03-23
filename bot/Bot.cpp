@@ -198,7 +198,7 @@ void Bot::handlePrivmsg(const std::string &msg) {
 
 	// 명령어 처리
 	if (text == "!help") {
-		sendPrivmsg(receiver, "사용 가능한 명령어: !help, !ping, !hello");
+		sendPrivmsg(receiver, "사용 가능한 명령어: !help, !ping, !hello or !hi, !dice, !time, !42");
 	} else if (text == "!ping") {
 		sendPrivmsg(receiver, "pong!");
 	} else if (text == "!hello" || text == "!hi") {
@@ -215,6 +215,8 @@ void Bot::handlePrivmsg(const std::string &msg) {
 		char buf[80];
 		std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
 		sendPrivmsg(receiver, std::string("현재 서버 시간: ") + buf);
+	} else if (text == "!42") {
+		sendPrivmsg(receiver, "42!");
 	}
 }
 
