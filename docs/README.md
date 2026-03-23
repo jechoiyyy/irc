@@ -1,4 +1,4 @@
-_This project has been created as part of the 42 curriculum by jechoi_
+_This project has been created as part of the 42 curriculum by jechoi, seokson_
 
 ## Description
 
@@ -34,19 +34,7 @@ make
 Use `irssi` to connect to the server:
 
 ```bash
-irssi
-```
-
-Then connect from the `irssi` prompt:
-
-```text
-/connect localhost 6667 mypassword
-```
-
-If you want to use a specific nickname when connecting:
-
-```text
-/connect -nick mynick localhost 6667 mypassword
+irssi -c localhost -p 6667 -w 1234 -n <nickname>
 ```
 
 After connecting, you can join a channel and start chatting:
@@ -63,6 +51,48 @@ make clean   # Remove object files
 make fclean  # Remove object files and executable
 make re      # Rebuild the project
 ```
+
+### Bonus
+#### File Transfer
+
+IRC에서 file transfer는 dcc(direct client to client) 프로토콜을 통해 이루어진다.
+서버는 파일 데이터의 통로가 아니라 클라이언트 간 전송을 성립시켜주는 중개의 역할만 한다.
+
+Send file aa to bb
+```text
+/dcc send bb fileA
+```
+
+Get file bb from aa
+
+```text
+/dcc get aa
+```
+
+#### Bot
+
+An IRC bot is implemented as an external client that complies with the RFC 1459/2812 protocols.
+It runs independently from the server process and interacts with the server through a socket connection.
+
+Use 'ircbot' to connect to the server:
+
+```bash
+./ircbot localhost 6667 1234
+```
+
+Inviting 'ircbot' to a channel:
+
+```text
+/invite ircbot <channel>
+```
+
+What a bot can do:
+- !help: Displays a list of commands the bot can perform.
+- !hello / !hi: The bot greets you.
+- !ping: The bot responds with “pong.”
+- !dice: The bot rolls a dice.
+- !time: The bot shows the current server time.
+- !42: 42!
 
 ## Resources
 
@@ -81,3 +111,4 @@ AI tools were used for:
 - Debugging and error resolution during development
 - Understanding IRC protocol specifications and edge cases
 - Code review and optimization suggestions for the command handler and message parsing logic
+- Translating sentences that are difficult to articulate
