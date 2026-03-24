@@ -1,3 +1,5 @@
+# ft_irc
+
 _This project has been created as part of the 42 curriculum by jechoi, seokson_
 
 ## Description
